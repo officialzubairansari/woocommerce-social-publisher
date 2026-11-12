@@ -21,6 +21,7 @@ $mock_transients = [];
 $mock_filters = [];
 $mock_actions = [];
 $mock_http_responses = [];
+$mock_http_requests = [];
 
 // Mock WordPress functions
 function get_option( $key, $default = false ) {
@@ -248,8 +249,24 @@ function add_query_arg() {
 	if ( empty( $params ) ) {
 		return $url;
 	}
-	$sep = strpos( $url, '?' ) !== false ? '&' : '?';
-	return $url . $sep . http_build_query( $params );
+	// WordPress does NOT encode newly supplied values. Keep this behavior here
+	// so nested URLs and reserved characters expose missing encoding in callers.
+	$fragment = '';
+	if ( false !== strpos( $url, '#' ) ) {
+		list( $url, $fragment ) = explode( '#', $url, 2 );
+		$fragment = '#' . $fragment;
+	}
+	$parts = explode( '?', $url, 2 );
+	$existing = [];
+	parse_str( isset( $parts[1] ) ? $parts[1] : '', $existing );
+	$existing = array_map( 'urlencode', $existing );
+	$pairs = [];
+	foreach ( array_merge( $existing, $params ) as $key => $value ) {
+		if ( false !== $value ) {
+			$pairs[] = $key . '=' . $value;
+		}
+	}
+	return $parts[0] . ( $pairs ? '?' . implode( '&', $pairs ) : '' ) . $fragment;
 }
 
 function wp_parse_url( $url, $component = -1 ) {
@@ -266,7 +283,8 @@ function wc_get_price_thousand_separator() { return ''; }
 
 // Mock HTTP client for Meta API
 function wp_remote_get( $url, $args = [] ) {
-	global $mock_http_responses;
+	global $mock_http_responses, $mock_http_requests;
+	$mock_http_requests[] = [ 'method' => 'GET', 'url' => $url, 'args' => $args ];
 	$sorted_patterns = array_keys( $mock_http_responses );
 	usort( $sorted_patterns, function( $a, $b ) { return strlen( $b ) - strlen( $a ); } );
 	foreach ( $sorted_patterns as $pattern ) {

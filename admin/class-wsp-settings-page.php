@@ -75,6 +75,9 @@ class WSP_Settings_Page {
 					break;
 
 				case 'facebook':
+					if ( isset( $_POST['meta_login_config_id'] ) ) {
+						$current['meta_login_config_id'] = sanitize_text_field( wp_unslash( $_POST['meta_login_config_id'] ) );
+					}
 					if ( isset( $_POST['meta_app_id'] ) ) {
 						$current['meta_app_id'] = sanitize_text_field( wp_unslash( $_POST['meta_app_id'] ) );
 					}

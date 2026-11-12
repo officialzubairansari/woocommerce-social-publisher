@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Social Publisher
  * Plugin URI: https://github.com/officialzubairansari/woocommerce-social-publisher
  * Description: Publish WooCommerce products directly to Facebook Pages and Instagram Business/Creator accounts via official Meta Graph API.
- * Version: 1.0.1
+ * Version: 1.0.3
  * Author: Zubair Ansari
  * Author URI: https://github.com/officialzubairansari/woocommerce-social-publisher
  * Text Domain: woocommerce-social-publisher
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin Constants
-define( 'WSP_VERSION', '1.0.1' );
+define( 'WSP_VERSION', '1.0.3' );
 define( 'WSP_FILE', __FILE__ );
 define( 'WSP_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WSP_URL', plugin_dir_url( __FILE__ ) );

@@ -8,10 +8,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $redirect_uri   = WSP_Settings::get_oauth_redirect_uri();
+$app_domain     = WSP_Settings::get_oauth_app_domain();
 $is_connected   = WSP_Settings::is_facebook_connected();
 $available_pages= WSP_Settings::get( 'available_pages', [] );
 $active_page_id = WSP_Settings::get( 'fb_page_id' );
 $app_id         = WSP_Settings::get( 'meta_app_id' );
+$config_id      = WSP_Settings::get( 'meta_login_config_id', '' );
 $app_secret     = WSP_Settings::get( 'meta_app_secret' );
 $masked_secret  = ! empty( $app_secret ) ? WSP_Security::mask_secret( $app_secret ) : '';
 $api_version    = WSP_Settings::get( 'meta_api_version', 'v21.0' );
@@ -27,6 +29,26 @@ $auth_url_or_error = ! empty( $app_id ) ? WSP_Meta_Auth::get_authorization_url()
 
 	<table class="form-table" role="presentation">
 		<tbody>
+			<tr>
+				<th scope="row"><label for="meta_login_config_id"><?php esc_html_e( 'Facebook Login for Business Configuration ID', 'woocommerce-social-publisher' ); ?></label></th>
+				<td>
+					<input type="text" inputmode="numeric" name="meta_login_config_id" id="meta_login_config_id" class="regular-text" value="<?php echo esc_attr( $config_id ); ?>">
+					<p class="description"><?php esc_html_e( 'For Facebook Login for Business, create a configuration under Configurations in the same Meta app. Choose User Access Token, enable Page assets, and select the permissions below. Paste the Configuration ID here and save before connecting. Leave blank only when using a login flow that accepts the scope parameter.', 'woocommerce-social-publisher' ); ?></p>
+					<p class="description"><strong><?php esc_html_e( 'Permissions:', 'woocommerce-social-publisher' ); ?></strong> <code><?php echo esc_html( implode( ', ', WSP_Meta_Auth::REQUIRED_SCOPES ) ); ?></code></p>
+					<p class="description"><?php esc_html_e( 'During login, grant access to the intended Facebook Page, its business portfolio, and its linked Instagram professional account. Linking Facebook and Instagram alone does not grant this app Page access.', 'woocommerce-social-publisher' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label><?php esc_html_e( 'Meta App Domain', 'woocommerce-social-publisher' ); ?></label>
+				</th>
+				<td>
+					<code><?php echo esc_html( $app_domain ); ?></code>
+					<p class="description">
+						<?php esc_html_e( 'Add this hostname (without https:// or a path) in Meta App Dashboard > App settings > Basic > App Domains. This is required in addition to the redirect URI below. Use the public production hostname; localhost and private development hostnames cannot complete Meta OAuth.', 'woocommerce-social-publisher' ); ?>
+					</p>
+				</td>
+			</tr>
 			<tr>
 				<th scope="row">
 					<label for="meta_app_id"><?php esc_html_e( 'Meta App ID', 'woocommerce-social-publisher' ); ?> <span class="wsp-required">*</span></label>
@@ -69,7 +91,7 @@ $auth_url_or_error = ! empty( $app_id ) ? WSP_Meta_Auth::get_authorization_url()
 						</button>
 					</div>
 					<p class="description">
-						<?php esc_html_e( 'Add this exact URL in your Meta App Dashboard under Facebook Login for Business > Settings > "Valid OAuth Redirect URIs".', 'woocommerce-social-publisher' ); ?>
+						<?php esc_html_e( 'Add this exact URL in your Meta App Dashboard under Facebook Login for Business > Settings > "Valid OAuth Redirect URIs". The URL must use the same public hostname shown above.', 'woocommerce-social-publisher' ); ?>
 					</p>
 				</td>
 			</tr>

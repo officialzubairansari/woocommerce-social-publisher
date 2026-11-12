@@ -15,6 +15,7 @@ class WSP_Meta_Auth {
 	 * Required Meta Graph API Permissions
 	 */
 	const REQUIRED_SCOPES = [
+		'business_management',
 		'pages_manage_posts',
 		'pages_read_engagement',
 		'pages_show_list',
@@ -45,8 +46,18 @@ class WSP_Meta_Auth {
 			'redirect_uri'  => $redirect_uri,
 			'state'         => $state,
 			'response_type' => 'code',
-			'scope'         => implode( ',', self::REQUIRED_SCOPES ),
 		];
+		$config_id = WSP_Settings::get( 'meta_login_config_id', '' );
+		if ( '' !== $config_id ) {
+			if ( ! ctype_digit( (string) $config_id ) ) {
+				return new WP_Error( 'invalid_config_id', __( 'The Facebook Login for Business Configuration ID must contain digits only.', 'woocommerce-social-publisher' ) );
+			}
+			// Business Login permissions and assets are selected in this configuration.
+			$params['config_id'] = $config_id;
+		} else {
+			$params['scope']     = implode( ',', self::REQUIRED_SCOPES );
+			$params['auth_type'] = 'rerequest';
+		}
 
 		return sprintf( '%s/%s/dialog/oauth?%s', self::OAUTH_DIALOG_URL, $api_version, http_build_query( $params ) );
 	}
@@ -156,7 +167,7 @@ class WSP_Meta_Auth {
 		if ( empty( $raw_pages ) ) {
 			return [
 				'success' => false,
-				'message' => __( 'No Facebook Pages found for this Meta account. Make sure you are an administrator of at least one Facebook Page.', 'woocommerce-social-publisher' ),
+				'message' => self::get_empty_pages_message( $api, $user_token ),
 			];
 		}
 
@@ -198,6 +209,37 @@ class WSP_Meta_Auth {
 			'success' => true,
 			'message' => sprintf( __( 'Successfully connected! Discovered %d Facebook Page(s).', 'woocommerce-social-publisher' ), count( $available_pages ) ),
 		];
+	}
+
+	/**
+	 * Explain an empty account response using the token's actual permission grants.
+	 * Do not expose the access token or discard a previously working connection.
+	 *
+	 * @param WSP_Meta_API $api
+	 * @param string $user_token
+	 * @return string
+	 */
+	private static function get_empty_pages_message( $api, $user_token ) {
+		$message = __( 'Facebook authentication succeeded, but Meta returned no Pages accessible to this app.', 'woocommerce-social-publisher' );
+		$permissions = $api->get( 'me/permissions', [], $user_token );
+		if ( $permissions['success'] && isset( $permissions['data']['data'] ) && is_array( $permissions['data']['data'] ) ) {
+			$granted = [];
+			foreach ( $permissions['data']['data'] as $permission ) {
+				if ( isset( $permission['permission'], $permission['status'] ) && 'granted' === $permission['status'] ) {
+					$granted[] = $permission['permission'];
+				}
+			}
+			$missing = array_diff( [ 'pages_show_list', 'business_management' ], $granted );
+			if ( $missing ) {
+				$message .= ' ' . sprintf( __( 'This token is missing these Page discovery permissions: %s. Enable them in your Meta app and, if used, its Facebook Login for Business configuration, then reconnect and approve access.', 'woocommerce-social-publisher' ), implode( ', ', $missing ) );
+			} else {
+				$message .= ' ' . __( 'The token has pages_show_list and business_management. Check which Page and business assets were shared with this app during login.', 'woocommerce-social-publisher' );
+			}
+		} else {
+			$message .= ' ' . __( 'Permission verification was unavailable. Check pages_show_list and business_management in your Meta app before reconnecting.', 'woocommerce-social-publisher' );
+		}
+		$message .= ' ' . __( 'In Facebook Business Integrations, edit this app and allow the intended Page and business portfolio. Sign in with the Facebook profile that has access to both. For Facebook Login for Business, use a configuration with User Access Token and Page assets enabled. Also check the app roles or Advanced Access requirements in your Meta dashboard.', 'woocommerce-social-publisher' );
+		return $message;
 	}
 
 	/**

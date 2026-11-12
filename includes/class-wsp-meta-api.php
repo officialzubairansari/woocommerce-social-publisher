@@ -53,7 +53,13 @@ class WSP_Meta_API {
 			$params['access_token'] = $access_token;
 		}
 
-		$url = add_query_arg( $params, $this->get_url( $endpoint ) );
+		// These are raw API values, including nested callback URLs and tokens.
+		// add_query_arg() expects pre-encoded values and would split a callback's
+		// ampersands into top-level parameters, changing redirect_uri at exchange.
+		$url = $this->get_url( $endpoint );
+		if ( ! empty( $params ) ) {
+			$url .= '?' . http_build_query( $params, '', '&', PHP_QUERY_RFC3986 );
+		}
 
 		$response = wp_remote_get( $url, [
 			'timeout'     => 45,
@@ -164,6 +170,9 @@ class WSP_Meta_API {
 		$guidance = '';
 
 		switch ( $code ) {
+			case 191:
+				$guidance = __( 'Meta rejected the OAuth redirect URL. Confirm that App Domains and Valid OAuth Redirect URIs match the values shown in Settings -> Facebook, and that the plugin uses the same App ID as your Meta dashboard. Start a new connection attempt after making changes.', 'woocommerce-social-publisher' );
+				break;
 			case 190:
 				if ( 463 === $subcode || 467 === $subcode ) {
 					$guidance = __( 'Your Meta Access Token has expired. Please reconnect your account in Settings -> Facebook.', 'woocommerce-social-publisher' );

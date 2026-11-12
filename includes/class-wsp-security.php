@@ -100,17 +100,17 @@ class WSP_Security {
 		}
 
 		$raw = base64_decode( $data, true );
-		if ( false === $raw || strpos( $raw, '::' ) === false ) {
+		if ( false === $raw || strlen( $raw ) <= 18 || substr( $raw, 16, 2 ) !== '::' ) {
 			return $data; // Not encrypted or legacy plain text
 		}
 
-		$parts = explode( '::', $raw, 2 );
-		if ( count( $parts ) !== 2 ) {
-			return $data;
-		}
+		// The IV is binary and may itself contain or end with a colon.
+		// Its fixed length, not the first delimiter occurrence, marks the boundary.
+		$iv     = substr( $raw, 0, 16 );
+		$cipher = substr( $raw, 18 );
 
 		$key = defined( 'AUTH_KEY' ) ? substr( hash( 'sha256', AUTH_KEY ), 0, 32 ) : substr( hash( 'sha256', 'wsp_default_key' ), 0, 32 );
-		$decrypted = openssl_decrypt( $parts[1], 'AES-256-CBC', $key, 0, $parts[0] );
+		$decrypted = openssl_decrypt( $cipher, 'AES-256-CBC', $key, 0, $iv );
 
 		return false !== $decrypted ? $decrypted : $data;
 	}

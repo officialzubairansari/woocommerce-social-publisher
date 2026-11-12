@@ -48,6 +48,7 @@ class WSP_Settings {
 
 			// Meta / Facebook Credentials
 			'meta_app_id'                => '',
+			'meta_login_config_id'       => '',
 			'meta_app_secret'            => '',
 			'meta_api_version'           => defined( 'WSP_DEFAULT_META_API_VERSION' ) ? WSP_DEFAULT_META_API_VERSION : 'v21.0',
 			'user_access_token'          => '',
@@ -174,5 +175,17 @@ class WSP_Settings {
 	 */
 	public static function get_oauth_redirect_uri() {
 		return admin_url( 'admin.php?page=woocommerce-social-publisher&tab=facebook&wsp_action=oauth_callback' );
+	}
+
+	/**
+	 * Get the hostname Meta requires in the app's App Domains setting.
+	 *
+	 * @return string
+	 */
+	public static function get_oauth_app_domain() {
+		$redirect_uri = self::get_oauth_redirect_uri();
+		$host         = wp_parse_url( $redirect_uri, PHP_URL_HOST );
+
+		return is_string( $host ) ? strtolower( $host ) : '';
 	}
 }

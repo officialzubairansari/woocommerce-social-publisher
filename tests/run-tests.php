@@ -69,6 +69,11 @@ test_instagram_container_publishing_workflow();
 test_meta_error_diagnostic_guidance();
 test_independent_platform_tracking();
 test_multi_image_gallery_carousel_publishing();
+require_once __DIR__ . '/test-meta-auth.php';
+test_oauth_token_exchange_preserves_parameters();
+test_oauth_stored_token_with_binary_iv();
+test_oauth_business_configuration();
+test_empty_pages_permission_diagnostics();
 echo "\n";
 
 // 5. Bulk Queue, Batch Scaling & Retries
