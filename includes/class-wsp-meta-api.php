@@ -193,7 +193,7 @@ class WSP_Meta_API {
 				}
 				break;
 			case 368:
-				$guidance = __( 'Temporary Meta publishing block or rate limit. Please wait a few minutes before retrying.', 'woocommerce-social-publisher' );
+				$guidance = __( 'Temporary Meta publishing block or rate limit. Please reschedule the post a few minutes later.', 'woocommerce-social-publisher' );
 				break;
 			case 4:
 			case 17:

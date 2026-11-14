@@ -38,7 +38,6 @@ $pages = $history['pages'];
 				</select>
 
 				<select name="status" id="filter-status">
-					<option value=""><?php esc_html_e( 'All Statuses', 'woocommerce-social-publisher' ); ?></option>
 					<option value="published" <?php selected( $current_status, 'published' ); ?>><?php esc_html_e( 'Published', 'woocommerce-social-publisher' ); ?></option>
 					<option value="failed" <?php selected( $current_status, 'failed' ); ?>><?php esc_html_e( 'Failed', 'woocommerce-social-publisher' ); ?></option>
 					<option value="scheduled" <?php selected( $current_status, 'scheduled' ); ?>><?php esc_html_e( 'Scheduled', 'woocommerce-social-publisher' ); ?></option>
@@ -46,14 +45,19 @@ $pages = $history['pages'];
 					<option value="queued" <?php selected( $current_status, 'queued' ); ?>><?php esc_html_e( 'Queued', 'woocommerce-social-publisher' ); ?></option>
 				</select>
 
-				<button type="submit" class="button"><?php esc_html_e( 'Filter', 'woocommerce-social-publisher' ); ?></button>
-				<?php if ( ! empty( $current_platform ) || ! empty( $current_status ) ) : ?>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wsp-history' ) ); ?>" class="button button-link"><?php esc_html_e( 'Reset Filters', 'woocommerce-social-publisher' ); ?></a>
+				<label for="wsp-per-page"><?php esc_html_e( 'Records per page', 'woocommerce-social-publisher' ); ?></label>
+				<input type="number" id="wsp-per-page" name="per_page" min="1" max="200" value="<?php echo esc_attr( $per_page ); ?>" class="small-text">
+				<button type="submit" class="button"><?php esc_html_e( 'Apply', 'woocommerce-social-publisher' ); ?></button>
+				<?php if ( ! empty( $current_platform ) || 'published' !== $current_status ) : ?>
+					<a href="<?php echo esc_url( add_query_arg( 'per_page', $per_page, admin_url( 'admin.php?page=wsp-history' ) ) ); ?>" class="button button-link"><?php esc_html_e( 'Reset Filters', 'woocommerce-social-publisher' ); ?></a>
 				<?php endif; ?>
 			</div>
 		</form>
 
 		<div class="alignright actions">
+			<?php if ( WSP_Queue::can_reschedule( $current_status ) ) : ?>
+				<button type="button" id="wsp-bulk-reschedule-btn" class="button button-secondary"><?php esc_html_e( 'Reschedule Selected', 'woocommerce-social-publisher' ); ?></button>
+			<?php endif; ?>
 			<button type="button" id="wsp-bulk-delete-btn" class="button button-secondary">
 				<?php esc_html_e( 'Delete Selected', 'woocommerce-social-publisher' ); ?>
 			</button>
@@ -97,7 +101,7 @@ $pages = $history['pages'];
 				?>
 					<tr id="wsp-row-<?php echo esc_attr( $post->id ); ?>" class="<?php echo esc_attr( $status_class ); ?>">
 						<th scope="row" class="check-column">
-							<input type="checkbox" name="post_ids[]" value="<?php echo esc_attr( $post->id ); ?>" class="wsp-row-cb">
+							<input type="checkbox" name="post_ids[]" value="<?php echo esc_attr( $post->id ); ?>" class="wsp-row-cb" data-reschedulable="<?php echo WSP_Queue::can_reschedule( $post->status ) ? '1' : '0'; ?>">
 						</th>
 						<td class="column-thumb">
 							<?php if ( ! empty( $post->media_url ) ) : ?>
@@ -161,7 +165,7 @@ $pages = $history['pages'];
 								<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $post->published_at ) ) ); ?></small>
 							<?php elseif ( ! empty( $post->scheduled_at ) ) : ?>
 								<small><strong><?php esc_html_e( 'Scheduled:', 'woocommerce-social-publisher' ); ?></strong><br>
-								<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $post->scheduled_at ) ) ); ?></small>
+								<?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $post->scheduled_at . ' UTC' ) ) ); ?></small>
 							<?php else : ?>
 								<small><strong><?php esc_html_e( 'Created:', 'woocommerce-social-publisher' ); ?></strong><br>
 								<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $post->created_at ) ) ); ?></small>
@@ -169,10 +173,8 @@ $pages = $history['pages'];
 						</td>
 						<td class="column-actions">
 							<div class="wsp-row-actions-group">
-								<?php if ( 'failed' === $post->status ) : ?>
-									<button type="button" class="button button-small wsp-retry-btn" data-id="<?php echo esc_attr( $post->id ); ?>" title="<?php esc_attr_e( 'Retry Post', 'woocommerce-social-publisher' ); ?>">
-										<?php esc_html_e( 'Retry', 'woocommerce-social-publisher' ); ?>
-									</button>
+								<?php if ( WSP_Queue::can_reschedule( $post->status ) ) : ?>
+									<button type="button" class="button button-small wsp-reschedule-btn" data-id="<?php echo esc_attr( $post->id ); ?>" data-datetime="<?php echo esc_attr( $post->scheduled_at ? wp_date( 'Y-m-d\\TH:i', strtotime( $post->scheduled_at . ' UTC' ) ) : '' ); ?>"><?php esc_html_e( 'Reschedule', 'woocommerce-social-publisher' ); ?></button>
 								<?php endif; ?>
 								<button type="button" class="button button-small wsp-view-details-btn" data-id="<?php echo esc_attr( $post->id ); ?>" title="<?php esc_attr_e( 'View Details', 'woocommerce-social-publisher' ); ?>">
 									<?php esc_html_e( 'View', 'woocommerce-social-publisher' ); ?>
@@ -195,7 +197,7 @@ $pages = $history['pages'];
 				<span class="displaying-num"><?php printf( esc_html__( '%d items', 'woocommerce-social-publisher' ), $total ); ?></span>
 				<?php
 				echo paginate_links( [
-					'base'      => add_query_arg( 'paged', '%#%' ),
+					'base'      => add_query_arg( [ 'paged' => '%#%', 'per_page' => $per_page ] ),
 					'format'    => '',
 					'prev_text' => '&laquo;',
 					'next_text' => '&raquo;',
@@ -206,6 +208,27 @@ $pages = $history['pages'];
 			</div>
 		</div>
 	<?php endif; ?>
+
+	<div id="wsp-reschedule-modal" class="wsp-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="wsp-reschedule-title">
+		<form id="wsp-reschedule-form" class="wsp-modal-content">
+			<div class="wsp-modal-header">
+				<h3 id="wsp-reschedule-title"><?php esc_html_e( 'Reschedule Post', 'woocommerce-social-publisher' ); ?></h3>
+				<button type="button" class="wsp-modal-close-btn" aria-label="<?php esc_attr_e( 'Close', 'woocommerce-social-publisher' ); ?>">&times;</button>
+			</div>
+			<div class="wsp-modal-body">
+				<input type="hidden" id="wsp-reschedule-id">
+				<p id="wsp-reschedule-selection" class="description" hidden></p>
+				<label for="wsp-reschedule-datetime"><?php esc_html_e( 'New date and time', 'woocommerce-social-publisher' ); ?></label>
+				<input type="datetime-local" id="wsp-reschedule-datetime" required>
+				<p class="description"><?php printf( esc_html__( 'Site timezone: %s', 'woocommerce-social-publisher' ), esc_html( wp_timezone_string() ) ); ?></p>
+				<p id="wsp-reschedule-error" class="notice notice-error" role="alert" hidden></p>
+			</div>
+			<div class="wsp-modal-footer">
+				<button type="submit" class="button button-primary"><?php esc_html_e( 'Save Schedule', 'woocommerce-social-publisher' ); ?></button>
+				<button type="button" class="button button-secondary wsp-modal-close-btn"><?php esc_html_e( 'Cancel', 'woocommerce-social-publisher' ); ?></button>
+			</div>
+		</form>
+	</div>
 
 	<!-- Details Modal -->
 	<div id="wsp-details-modal" class="wsp-modal-overlay" style="display:none;">

@@ -21,7 +21,7 @@
 - **Smart Template Engine** – Customize post formatting with dynamic tokens (`{product_title}`, `{regular_price}`, `{sale_price}`, `{product_url}`, `{sku}`, `{hashtags}`). Unused sale price lines automatically collapse.
 - **Duplicate Prevention** – Tracks publishing history and alerts admins if a product was previously published to avoid spamming.
 - **Background Queue & Scheduling** – Handle batches (50–100+ items) effortlessly with real-time UI progress bars and native WooCommerce Action Scheduler background processing.
-- **Audit History & Logs** – Detailed publishing history with direct links to live Meta posts, status filters, and one-click retries.
+- **Audit History & Logs** – Detailed publishing history with direct links to live Meta posts, status filters, customizable page sizes, and individual or bulk rescheduling (excluding Published and Queued posts).
 - **Enterprise Security** – Built for security with AES-256 token encryption, nonce verification, and HPOS compatibility.
 
 ---

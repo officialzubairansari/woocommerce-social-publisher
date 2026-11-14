@@ -155,11 +155,14 @@ class WSP_Preview_Page {
 			$gallery_urls = isset( $item['gallery_urls'] ) && is_array( $item['gallery_urls'] ) ? array_map( 'esc_url_raw', $item['gallery_urls'] ) : [];
 
 			if ( $product_id > 0 ) {
-				WSP_Queue::schedule_job( $timestamp, $product_id, $platform, [
+				$scheduled = WSP_Queue::schedule_job( $timestamp, $product_id, $platform, [
 					'caption'      => $caption,
 					'image_url'    => $image_url,
 					'gallery_urls' => $gallery_urls,
 				] );
+				if ( ! $scheduled ) {
+					wp_send_json_error( [ 'message' => __( 'Unable to schedule all posts. Check Publishing History before trying again.', 'woocommerce-social-publisher' ) ] );
+				}
 				$scheduled_count++;
 			}
 		}

@@ -106,7 +106,6 @@ class WSP_Admin {
 					'publishing'      => __( 'Publishing...', 'woocommerce-social-publisher' ),
 					'published'       => __( 'Published', 'woocommerce-social-publisher' ),
 					'failed'          => __( 'Failed', 'woocommerce-social-publisher' ),
-					'retry'           => __( 'Retry', 'woocommerce-social-publisher' ),
 					'confirmCancel'   => __( 'Are you sure you want to cancel? Unsaved custom edits will be lost.', 'woocommerce-social-publisher' ),
 					'scheduledNotice' => __( 'Scheduled successfully! View in Publishing History.', 'woocommerce-social-publisher' ),
 				],
@@ -140,15 +139,21 @@ class WSP_Admin {
 				'wsp-history-js',
 				WSP_URL . 'assets/js/history.js',
 				[ 'jquery' ],
-				WSP_VERSION,
+				filemtime( WSP_PATH . 'assets/js/history.js' ),
 				true
 			);
 
 			wp_localize_script( 'wsp-history-js', 'wspHistoryData', [
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wsp_history_ajax_nonce' ),
+				'timezoneOffset' => wp_timezone()->getOffset( new DateTimeImmutable() ),
 				'i18n'    => [
-					'retrying'       => __( 'Retrying...', 'woocommerce-social-publisher' ),
+					'reschedulePost' => __( 'Reschedule Post', 'woocommerce-social-publisher' ),
+					'bulkReschedule' => __( 'Reschedule Selected Posts', 'woocommerce-social-publisher' ),
+					'selectReschedule' => __( 'Select at least one record other than Published or Queued.', 'woocommerce-social-publisher' ),
+					'bulkScheduleInfo' => __( '%d eligible records will use the same new date and time. Published and Queued records will be skipped.', 'woocommerce-social-publisher' ),
+					'savingSchedule' => __( 'Saving...', 'woocommerce-social-publisher' ),
+					'scheduleError'  => __( 'Unable to reschedule the post. Please try again.', 'woocommerce-social-publisher' ),
 					'confirmDelete'  => __( 'Are you sure you want to delete this log entry?', 'woocommerce-social-publisher' ),
 				],
 			] );

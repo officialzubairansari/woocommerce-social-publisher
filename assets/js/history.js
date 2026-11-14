@@ -6,36 +6,82 @@
 	'use strict';
 
 	$(document).ready(function() {
+		var $rescheduleModal = $('#wsp-reschedule-modal');
+		var $rescheduleTrigger;
+		var rescheduleIds = [];
+		function currentSiteDatetime() {
+			var siteNow = new Date(Date.now() + Number(wspHistoryData.timezoneOffset) * 1000);
+			return siteNow.toISOString().slice(0, 16);
+		}
+		$(document).on('click', '.wsp-reschedule-btn', function() {
+			rescheduleIds = [];
+			$rescheduleTrigger = $(this);
+			$('#wsp-reschedule-title').text(wspHistoryData.i18n.reschedulePost);
+			$('#wsp-reschedule-selection').prop('hidden', true);
+			$('#wsp-reschedule-id').val($rescheduleTrigger.data('id'));
+			$('#wsp-reschedule-datetime').val(currentSiteDatetime());
+			$('#wsp-reschedule-error').prop('hidden', true).text('');
+			$rescheduleModal.show();
+			$('#wsp-reschedule-datetime').trigger('focus');
+		});
+		$('#wsp-bulk-reschedule-btn').on('click', function() {
+			rescheduleIds = [];
+			var eligible = 0;
+			$('.wsp-row-cb:checked').each(function() {
+				rescheduleIds.push($(this).val());
+				if ($(this).attr('data-reschedulable') === '1') { eligible++; }
+			});
+			if (!eligible) { alert(wspHistoryData.i18n.selectReschedule); return; }
+			$rescheduleTrigger = $(this);
+			$('#wsp-reschedule-title').text(wspHistoryData.i18n.bulkReschedule);
+			$('#wsp-reschedule-selection').text(wspHistoryData.i18n.bulkScheduleInfo.replace('%d', eligible)).prop('hidden', false);
+			$('#wsp-reschedule-datetime').val(currentSiteDatetime());
+			$('#wsp-reschedule-error').prop('hidden', true).text('');
+			$rescheduleModal.show();
+			$('#wsp-reschedule-datetime').trigger('focus');
+		});
+		function closeReschedule() {
+			if ($rescheduleModal.find('button[type="submit"]').prop('disabled')) { return; }
+			$rescheduleModal.hide();
+			if ($rescheduleTrigger) { $rescheduleTrigger.trigger('focus'); }
+		}
+		$rescheduleModal.on('click', function(e) {
+			if (e.target === this || $(e.target).closest('.wsp-modal-close-btn').length) { closeReschedule(); }
+		});
+		$(document).on('keydown', function(e) {
+			if (e.key === 'Escape' && $rescheduleModal.is(':visible')) { closeReschedule(); }
+		});
+		$('#wsp-reschedule-form').on('submit', function(e) {
+			e.preventDefault();
+			var $button = $(this).find('button[type="submit"]');
+			if ($button.prop('disabled')) { return; }
+			var label = $button.text();
+			$button.prop('disabled', true).text(wspHistoryData.i18n.savingSchedule);
+			$('#wsp-reschedule-error').prop('hidden', true);
+			$.post(wspHistoryData.ajaxUrl, {
+				action: rescheduleIds.length ? 'wsp_bulk_reschedule_posts' : 'wsp_reschedule_post',
+				nonce: wspHistoryData.nonce,
+				id: $('#wsp-reschedule-id').val(),
+				ids: rescheduleIds,
+				scheduled_time: $('#wsp-reschedule-datetime').val()
+			}).done(function(res) {
+				if (res.success) {
+					if (rescheduleIds.length) { alert(res.data.message); }
+					location.reload();
+				} else {
+					$('#wsp-reschedule-error').text((res.data && res.data.message) || wspHistoryData.i18n.scheduleError).prop('hidden', false);
+				}
+			}).fail(function() {
+				$('#wsp-reschedule-error').text(wspHistoryData.i18n.scheduleError).prop('hidden', false);
+			}).always(function() {
+				$button.prop('disabled', false).text(label);
+			});
+		});
+
 		// 1. Select All Checkboxes
 		$('#cb-select-all').on('change', function() {
 			var isChecked = $(this).is(':checked');
 			$('.wsp-row-cb').prop('checked', isChecked);
-		});
-
-		// 2. Retry Single Post
-		$(document).on('click', '.wsp-retry-btn', function(e) {
-			e.preventDefault();
-			var $btn = $(this);
-			var id = $btn.data('id');
-
-			$btn.prop('disabled', true).text(wspHistoryData.i18n.retrying);
-
-			$.post(wspHistoryData.ajaxUrl, {
-				action: 'wsp_retry_post',
-				nonce: wspHistoryData.nonce,
-				id: id
-			}, function(res) {
-				if (res.success) {
-					alert(res.data.message);
-					location.reload();
-				} else {
-					alert(res.data.message || 'Retry failed.');
-					$btn.prop('disabled', false).text('Retry');
-				}
-			}).fail(function() {
-				alert('Network error while retrying.');
-				$btn.prop('disabled', false).text('Retry');
-			});
 		});
 
 		// 3. Delete Single Log Record
@@ -214,37 +260,8 @@
 
 					$body.html(html);
 
-					// Update footer buttons if failed
-					var $footer = $modal.find('.wsp-modal-footer');
-					if (d.status === 'failed') {
-						$footer.html('<button type="button" class="button button-primary wsp-modal-retry-btn" data-id="' + d.id + '">Retry Now</button> <button type="button" class="button button-secondary wsp-modal-close-btn">Close</button>');
-					} else {
-						$footer.html('<button type="button" class="button button-secondary wsp-modal-close-btn">Close</button>');
-					}
 				} else {
 					$body.html('<p class="notice notice-error" style="padding:12px;">' + (res.data.message || 'Error loading details.') + '</p>');
-				}
-			});
-		});
-
-		// Modal Retry Button Handler
-		$(document).on('click', '.wsp-modal-retry-btn', function(e) {
-			e.preventDefault();
-			var $btn = $(this);
-			var id = $btn.data('id');
-			$btn.prop('disabled', true).text('Retrying...');
-
-			$.post(wspHistoryData.ajaxUrl, {
-				action: 'wsp_retry_post',
-				nonce: wspHistoryData.nonce,
-				id: id
-			}, function(res) {
-				if (res.success) {
-					alert(res.data.message || 'Published successfully!');
-					location.reload();
-				} else {
-					alert(res.data.message || 'Retry failed.');
-					$btn.prop('disabled', false).text('Retry Now');
 				}
 			});
 		});

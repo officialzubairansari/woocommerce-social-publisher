@@ -76,14 +76,14 @@ test_oauth_business_configuration();
 test_empty_pages_permission_diagnostics();
 echo "\n";
 
-// 5. Bulk Queue, Batch Scaling & Retries
+// 5. Bulk Queue, Batch Scaling & Scheduled Publishing
 echo "\033[1;34m[Suite 5: Bulk Actions, Queue & Scaling (1-100 Products)]\033[0m\n";
 require_once __DIR__ . '/test-queue-and-batch.php';
 test_bulk_actions_registration();
 test_bulk_action_interception_creates_transient();
 test_batch_scaling_1_to_100_products();
 test_scheduler_datetime_parsing();
-test_retry_system();
+test_scheduled_record_publishing();
 echo "\n";
 
 $elapsed = round( ( microtime( true ) - $start_time ) * 1000, 2 );

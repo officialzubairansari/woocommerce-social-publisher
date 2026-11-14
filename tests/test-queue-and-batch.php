@@ -51,31 +51,31 @@ function test_scheduler_datetime_parsing() {
 	assert_true( is_int( $ts ) && $ts > 0, 'Local datetime parsed into Unix timestamp' );
 }
 
-function test_retry_system() {
+function test_scheduled_record_publishing() {
 	global $wpdb;
 	$wpdb->posts = [];
 
-	// Create failed post record
+	// Create scheduled post record
 	$db_id = WSP_Database::insert_post( [
 		'product_id'    => 101,
 		'platform'      => 'facebook',
-		'caption'       => 'Retry Caption',
-		'status'        => 'failed',
+		'caption'       => 'Scheduled Caption',
+		'status'        => 'scheduled',
 		'error_message' => 'Temporary network error',
 		'attempts'      => 1,
 	] );
 
-	// Mock successful retry
+	// Mock successful scheduled publishing
 	global $mock_http_responses;
 	$mock_http_responses['10987654321/feed'] = [
 		'response' => [ 'code' => 200 ],
-		'body'     => json_encode( [ 'id' => 'fb_retry_success_id' ] ),
+		'body'     => json_encode( [ 'id' => 'fb_scheduled_success_id' ] ),
 	];
 
-	$retry_res = WSP_Publisher::retry( $db_id );
-	assert_true( $retry_res['success'], 'Retry completed successfully' );
+	$scheduled_res = WSP_Publisher::publish_record( $db_id );
+	assert_true( $scheduled_res['success'], 'Scheduled publishing completed successfully' );
 
 	$updated = WSP_Database::get_post( $db_id );
-	assert_true( $updated->status === 'published', 'Post status updated to published after retry' );
-	assert_true( $updated->attempts === 2, 'Attempt counter incremented on retry' );
+	assert_true( $updated->status === 'published', 'Post status updated to published after scheduled execution' );
+	assert_true( $updated->attempts === 2, 'Attempt counter incremented on scheduled execution' );
 }

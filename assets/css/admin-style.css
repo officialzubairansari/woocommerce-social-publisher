@@ -380,8 +380,13 @@ input:checked + .wsp-slider:before {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 }
+
+#wsp-per-page { width: 70px; }
+#wsp-reschedule-modal .wsp-modal-content { max-width: 480px; }
+#wsp-reschedule-datetime { display: block; margin-top: 8px; }
+.wsp-history-wrap .wsp-tablenav { height: auto; min-height: 40px; }
 
 /* Perfect vertical centering */
 .wsp-row-actions-group .button,
@@ -444,18 +449,6 @@ input:checked + .wsp-slider:before {
 	background: #f0f6fc !important;
 	border-color: #2271b1 !important;
 	color: #135e96 !important;
-}
-
-.wsp-retry-btn {
-	color: #d97706 !important;
-	border-color: #fcd34d !important;
-	background: #fffbeb !important;
-}
-
-.wsp-retry-btn:hover {
-	background: #fef3c7 !important;
-	border-color: #b45309 !important;
-	color: #b45309 !important;
 }
 
 .wsp-delete-log-btn,
@@ -572,22 +565,6 @@ input:checked + .wsp-slider:before {
 	justify-content: flex-end;
 	align-items: center;
 	gap: 10px;
-}
-
-.wsp-modal-retry-btn {
-	display: inline-flex !important;
-	align-items: center !important;
-	gap: 5px !important;
-	background: #7f54b3 !important;
-	border-color: #693b9e !important;
-	color: #ffffff !important;
-}
-
-.wsp-modal-retry-btn .dashicons {
-	font-size: 15px !important;
-	width: 15px !important;
-	height: 15px !important;
-	line-height: 15px !important;
 }
 
 /* Detail Hero Card */

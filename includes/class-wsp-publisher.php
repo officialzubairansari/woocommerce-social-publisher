@@ -188,15 +188,18 @@ class WSP_Publisher {
 	}
 
 	/**
-	 * Retry a previously failed publishing job
+	 * Publish the existing history record when its scheduled job runs.
 	 *
 	 * @param int $db_id
 	 * @return array [ 'success' => bool, 'error' => string ]
 	 */
-	public static function retry( $db_id ) {
+	public static function publish_record( $db_id ) {
 		$record = WSP_Database::get_post( $db_id );
 		if ( ! $record ) {
 			return [ 'success' => false, 'error' => __( 'Log record not found.', 'woocommerce-social-publisher' ) ];
+		}
+		if ( 'scheduled' !== $record->status ) {
+			return [ 'success' => false, 'error' => __( 'Post is not scheduled.', 'woocommerce-social-publisher' ) ];
 		}
 
 		$product_data = new WSP_Product_Data( $record->product_id );
@@ -208,10 +211,12 @@ class WSP_Publisher {
 			'attempts' => $record->attempts + 1,
 		] );
 
+		$gallery_urls = array_values( array_filter( array_map( 'trim', explode( ',', (string) $record->media_url ) ) ) );
 		$payload = [
-			'caption'     => $record->caption,
-			'image_url'   => $record->media_url,
-			'product_url' => $product_url,
+			'caption'      => $record->caption,
+			'image_url'    => $gallery_urls[0] ?? '',
+			'gallery_urls' => $gallery_urls,
+			'product_url'  => $product_url,
 		];
 
 		if ( 'facebook' === $record->platform ) {

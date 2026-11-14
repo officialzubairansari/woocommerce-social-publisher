@@ -78,13 +78,4 @@ class WSP_History {
 		return $count;
 	}
 
-	/**
-	 * Retry a failed log record
-	 *
-	 * @param int $id
-	 * @return array [ 'success' => bool, 'error' => string ]
-	 */
-	public static function retry( $id ) {
-		return WSP_Publisher::retry( $id );
-	}
 }
